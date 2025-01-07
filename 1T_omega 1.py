@@ -7,7 +7,6 @@ Created on Wed Sept 25 18:36:46 2024
 
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy as sp
 
 
 # Define fluid properties for two different fluids
@@ -80,13 +79,10 @@ dx = 0.01     # Spatial step size in x-direction
 dy = 0.01     # Spatial step size in y-direction
 
 # Velocity components and magnetic field parameters
-u_base = 1  # Base velocity in x-direction
-v_base = 1  # Base velocity in y-direction
-B0 = 0.1  # Magnetic field strength
-wavelength = v_base/(1/dt)
-f = v_base/wavelength
-omega = 2 * np.pi
-Bz = B0 *(1+ np.sin(2*omega*dt)) # Frequency of the magnetic field
+u_base = 1.0  # Base velocity in x-direction
+v_base = 1.0  # Base velocity in y-direction
+B0 = 1  # Magnetic field strength
+omega = 1 * np.pi  # Frequency of the oscillating magnetic field
 
 # Discretization
 nx = int(Lx / dx) + 1
@@ -143,6 +139,9 @@ def solve_equations_with_cfl(T, u, v, rho, nu, alpha, sigma, mu):
     velocity_errors = []
 
     for n in range(nt - 1):
+        t = n * dt
+        B = B0 * np.sin(omega * t)  # Oscillating magnetic field
+
         cfl = calculate_cfl(dx, dy, dt, u[n], v[n], alpha)
         cfl_values.append(cfl)
 
@@ -163,7 +162,7 @@ def solve_equations_with_cfl(T, u, v, rho, nu, alpha, sigma, mu):
                 u_adv_y = v[n, i, j] * (u[n, i, j] - u[n, i, j-1]) / dy
                 u_diff_x = nu * (u[n, i+1, j] - 2*u[n, i, j] + u[n, i-1, j]) / dx**2
                 u_diff_y = nu * (u[n, i, j+1] - 2*u[n, i, j] + u[n, i, j-1]) / dy**2
-                u[n+1, i, j] = u[n, i, j] + dt * (-u_adv_x - u_adv_y + u_diff_x + u_diff_y - sigma * Bz**2 * u[n, i, j] / rho)
+                u[n+1, i, j] = u[n, i, j] + dt * (-u_adv_x - u_adv_y + u_diff_x + u_diff_y - sigma * B**2 * u[n, i, j] / rho)
 
                 # y-Momentum equation
                 v_adv_x = u[n, i, j] * (v[n, i, j] - v[n, i-1, j]) / dx
@@ -266,7 +265,7 @@ for n in time_steps:
 
 plt.figure(figsize=(12, 8))
 plt.plot(time_steps * dt, errors, label='Temperature Error (Water vs Hybrid Fluid)', color='purple')
-plt.title('Error Analysis: Temperature Difference Over Time')
+plt.title('Temperature Difference Over Time')
 plt.xlabel('Time (s)')
 plt.ylabel('L2 Norm of Temperature Error')
 plt.legend()
@@ -303,4 +302,3 @@ plt.ylabel('Temperature (°C)')
 plt.legend()
 plt.grid()
 plt.show()
-
